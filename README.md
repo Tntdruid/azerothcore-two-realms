@@ -226,6 +226,27 @@ This assumes the data lives next to the binaries (`DataDir = "."`). Adjust the p
 | Bots log in on the wrong realm | Bot account prefixes overlap (see step 5) |
 | `start2.sh: $'\r': command not found` | The script was saved with Windows line endings. Fix with `sed -i 's/\r$//' /root/start2.sh` |
 | Build errors after updating | Cores and modules out of sync. Run `update`, `updatemods`, `update2`, then compile both |
+| `Applying of file '.../modules/<module>/.../updates/....sql' to database '..._2' failed!` | A module update runs before the module's base SQL on a fresh database. See [below](#module-update-fails-on-a-fresh-realm-2-database) |
+
+### Module update fails on a fresh realm 2 database
+
+Example:
+
+```
+Applying of file '/root/azerothcore-realm2/modules/mod-levelsync/data/sql/characters/updates/2026_05_03_00_add_founder_guid.sql' to database 'acore_characters2' failed!
+```
+
+**Why:** The auto-updater runs a module's SQL files sorted by file name, not base first. A dated update such as `2026_05_03_00_add_founder_guid.sql` sorts before a base file such as `mod_levelsync_tables.sql`. On realm 2's empty database the update tries to change a table that does not exist yet. Realm 1 never hit this because its tables were created before the update existed.
+
+**Fix:** Apply the module's base SQL to realm 2's database by hand, then start realm 2 again:
+
+```bash
+mysql -u acore -p acore_characters2 < /root/azerothcore-realm2/modules/mod-levelsync/data/sql/characters/base/mod_levelsync_tables.sql
+```
+
+Swap in the module, database and base file from your error. Check the base file first: this is only safe when it uses `CREATE TABLE IF NOT EXISTS`, because the updater will run it again later. A failed update is not recorded, so it is retried on the next start.
+
+If it still fails, the MySQL error is in the log lines just above `failed!`. Consider reporting the ordering problem to the module's author.
 
 ## Notes
 
