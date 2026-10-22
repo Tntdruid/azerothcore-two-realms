@@ -1,0 +1,10 @@
+# Realm 2 aliases. Add these to ~/.bashrc, then run: source ~/.bashrc
+alias wow2='cd ~/azerothcore-realm2;tmux attach -t world2-session'
+alias start2='bash /root/start2.sh'
+alias stop2='tmux send-keys -t world2-session "server shutdown 10" C-m'
+alias compile2='cd ~/azerothcore-realm2;./acore.sh compiler all'
+alias build2='cd ~/azerothcore-realm2;./acore.sh compiler build'
+alias update2='cd ~/azerothcore-realm2;git pull'
+alias pb2='nano ~/azerothcore-realm2/env/dist/etc/modules/playerbots.conf'
+alias world2='nano ~/azerothcore-realm2/env/dist/etc/worldserver.conf'
+alias ah2='nano ~/azerothcore-realm2/env/dist/etc/modules/mod_ahbot.conf'
