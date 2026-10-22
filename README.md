@@ -227,6 +227,7 @@ This assumes the data lives next to the binaries (`DataDir = "."`). Adjust the p
 | `start2.sh: $'\r': command not found` | The script was saved with Windows line endings. Fix with `sed -i 's/\r$//' /root/start2.sh` |
 | Build errors after updating | Cores and modules out of sync. Run `update`, `updatemods`, `update2`, then compile both |
 | `Applying of file '.../modules/<module>/.../updates/....sql' to database '..._2' failed!` | A module update runs before the module's base SQL on a fresh database. See [below](#module-update-fails-on-a-fresh-realm-2-database) |
+| A module works on realm 1 but not on realm 2 (e.g. `invalid race/class pair` with mod-arac) | The module's SQL was applied by hand on realm 1 and never reached realm 2's new databases. See [below](#module-works-on-realm-1-but-not-on-realm-2) |
 
 ### Module update fails on a fresh realm 2 database
 
@@ -247,6 +248,36 @@ mysql -u acore -p acore_characters2 < /root/azerothcore-realm2/modules/mod-level
 Swap in the module, database and base file from your error. Check the base file first: this is only safe when it uses `CREATE TABLE IF NOT EXISTS`, because the updater will run it again later. A failed update is not recorded, so it is retried on the next start.
 
 If it still fails, the MySQL error is in the log lines just above `failed!`. Consider reporting the ordering problem to the module's author.
+
+### Module works on realm 1 but not on realm 2
+
+Example with [mod-arac](https://github.com/heyitsbench/mod-arac) (All Races All Classes), when creating a Dwarf Mage on realm 2:
+
+```
+Player::Create: Possible hacking-attempt: Account 1 tried creating a character named 'Dwarfmage' with an invalid race/class pair (3/8) - refusing to do so.
+```
+
+**Why:** Some module READMEs tell you to apply their SQL with your SQL client. If you did that on realm 1, realm 2's fresh databases never got it, because realm 2 only copied the files, not realm 1's database content.
+
+**Check:** Compare a row the module adds. For mod-arac:
+
+```sql
+SELECT 'realm1', COUNT(*) FROM acore_world.playercreateinfo  WHERE race=3 AND class=8
+UNION ALL
+SELECT 'realm2', COUNT(*) FROM acore_world2.playercreateinfo WHERE race=3 AND class=8;
+```
+
+`1` for realm 1 and `0` for realm 2 means the SQL is missing on realm 2.
+
+**Fix:** Apply the same file to realm 2's database, then restart realm 2:
+
+```bash
+mysql -u acore -p acore_world2 < /root/azerothcore-wotlk/modules/mod-arac/data/sql/db-world/arac.sql
+```
+
+Only re-run a file that is safe to run twice (it uses `INSERT IGNORE`, `REPLACE`, or `DELETE` before `INSERT`). Go through every module you installed by hand on realm 1 and do the same for each, against `acore_world2` or `acore_characters2` as the module requires.
+
+mod-arac also needs patched DBC files in the server's `dbc` folder. Realm 2 got them with the copy in step 1, but check with `md5sum` if race/class errors remain.
 
 ## Notes
 
