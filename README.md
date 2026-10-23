@@ -43,7 +43,7 @@ For mod-playerbots that is a problem: each realm needs its own playerbots databa
 
 Change the paths if yours differ.
 
-**Hardware:** Each worldserver typically uses 1–4 GB RAM, plus a lot more with many random bots. The guide was tested on a 12-core AMD Ryzen AI 9 HX 370 with 32 GB RAM and 500 bots per realm.
+**Hardware:** Each worldserver typically uses 1–4 GB RAM, plus a lot more with many random bots. The guide was tested on a 24-core AMD Ryzen AI 9 HX 370 with 32 GB RAM and 500 bots per realm.
 
 ## Step 1: Copy the install
 
